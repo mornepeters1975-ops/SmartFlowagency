@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFlow Agency — Outbound campaigns that convert</title>
+<meta name="description" content="SmartFlow Agency runs outbound lead generation and appointment-setting campaigns for insurance and financial-services brands in South Africa. Trained agents, live performance tracking, POPIA-compliant.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0C2925;
+    --ink-2:#113B34;
+    --ink-3:#17493F;
+    --paper:#F4F6F5;
+    --paper-2:#EAEEEC;
+    --amber:#F5B301;
+    --amber-deep:#D99A00;
+    --teal:#2FB39A;
+    --muted:#5C6B66;
+    --line:rgba(12,41,37,.12);
+    --line-light:rgba(247,246,236,.16);
+    --display:'Space Grotesk',sans-serif;
+    --body:'IBM Plex Sans',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--body);
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .mono{font-family:var(--mono);letter-spacing:.02em}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(244,246,245,.82);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;height:66px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:-.01em}
+  .brand .mark{width:26px;height:26px;flex:0 0 auto}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a{font-size:14px;color:var(--ink-2);font-weight:500;transition:color .18s}
+  .nav-links a:hover{color:var(--amber-deep)}
+  .btn{
+    font-family:var(--body);font-weight:600;font-size:14px;
+    padding:11px 20px;border-radius:2px;cursor:pointer;border:none;
+    transition:transform .15s, background .18s, color .18s;
+    display:inline-block;
+  }
+  .btn-primary{background:var(--ink);color:var(--paper)}
+  .btn-primary:hover{background:var(--ink-3);transform:translateY(-1px)}
+  .btn-amber{background:var(--amber);color:var(--ink)}
+  .btn-amber:hover{background:var(--amber-deep);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:var(--paper);border:1px solid var(--line-light)}
+  .btn-ghost:hover{border-color:var(--amber);color:var(--amber)}
+  .menu-btn{display:none;background:none;border:none;cursor:pointer;padding:6px}
+  .menu-btn span{display:block;width:22px;height:2px;background:var(--ink);margin:5px 0;transition:.2s}
+
+  /* ---------- hero ---------- */
+  .hero{
+    background:var(--ink);
+    color:var(--paper);
+    position:relative;
+    overflow:hidden;
+    padding:88px 0 96px;
+  }
+  .hero .wrap{position:relative;z-index:2}
+  .hero .eyebrow{color:var(--teal)}
+  .hero h1{
+    font-family:var(--display);
+    font-weight:700;
+    font-size:clamp(52px,9vw,104px);
+    line-height:.96;
+    letter-spacing:-.03em;
+    margin:18px 0 0;
+  }
+  .hero h1 .out{color:var(--amber)}
+  .hero .sub{
+    max-width:620px;
+    margin:26px 0 34px;
+    font-size:clamp(16px,2vw,19px);
+    color:rgba(247,246,236,.82);
+  }
+  .hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+
+  /* signature flow line */
+  .flow{
+    position:relative;
+    margin-top:64px;
+    height:78px;
+    border-top:1px solid var(--line-light);
+    border-bottom:1px solid var(--line-light);
+    display:flex;align-items:center;
+  }
+  .flow-track{position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,rgba(47,179,154,.15),rgba(47,179,154,.5) 78%,var(--amber) 100%)}
+  .flow-labels{display:flex;justify-content:space-between;width:100%;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(247,246,236,.5)}
+  .flow-labels span:last-child{color:var(--amber)}
+  .lead{position:absolute;top:50%;left:0;width:8px;height:8px;border-radius:50%;background:var(--teal);transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(47,179,154,.6)}
+  .lead.d1{animation:travel 4.2s linear infinite}
+  .lead.d2{animation:travel 4.2s linear infinite;animation-delay:1.1s}
+  .lead.d3{animation:travelDrop 4.2s linear infinite;animation-delay:2.2s}
+  .lead.d4{animation:travel 4.2s linear infinite;animation-delay:3.1s}
+  .node-end{position:absolute;top:50%;right:0;width:14px;height:14px;border-radius:50%;background:var(--amber);transform:translate(50%,-50%);box-shadow:0 0 0 0 rgba(245,179,1,.5);animation:pulse 2.1s ease-out infinite}
+  @keyframes travel{0%{left:0;opacity:0}6%{opacity:1}94%{opacity:1;background:var(--amber)}100%{left:100%;opacity:0}}
+  @keyframes travelDrop{0%{left:0;opacity:0}6%{opacity:1}44%{opacity:1}60%{opacity:0;left:52%}100%{opacity:0}}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(245,179,1,.5)}70%{box-shadow:0 0 0 16px rgba(245,179,1,0)}100%{box-shadow:0 0 0 0 rgba(245,179,1,0)}}
+
+  /* ---------- sector strip ---------- */
+  .strip{background:var(--ink-2);color:rgba(247,246,236,.7);border-top:1px solid var(--line-light)}
+  .strip .wrap{display:flex;gap:12px 40px;flex-wrap:wrap;align-items:center;padding:20px 24px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+  .strip .lbl{color:rgba(247,246,236,.4)}
+  .strip .dot{width:5px;height:5px;border-radius:50%;background:var(--teal);display:inline-block}
+
+  /* ---------- generic section ---------- */
+  section{padding:92px 0}
+  .sec-head{max-width:680px;margin-bottom:52px}
+  .sec-head h2{font-family:var(--display);font-weight:600;font-size:clamp(30px,4.4vw,44px);line-height:1.05;letter-spacing:-.02em;margin:14px 0 0}
+  .sec-head p{margin-top:16px;color:var(--muted);font-size:17px}
+
+  /* services grid */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .card{background:var(--paper);padding:34px 30px;transition:background .2s}
+  .card:hover{background:var(--paper-2)}
+  .card .num{font-family:var(--mono);font-size:12px;color:var(--amber-deep);letter-spacing:.08em}
+  .card h3{font-family:var(--display);font-weight:600;font-size:20px;margin:16px 0 10px;letter-spacing:-.01em}
+  .card p{color:var(--muted);font-size:15px}
+
+  /* why - dark band */
+  .why{background:var(--ink);color:var(--paper)}
+  .why .sec-head h2{color:var(--paper)}
+  .why .sec-head .eyebrow{color:var(--teal)}
+  .why-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;background:var(--line-light);border:1px solid var(--line-light)}
+  .why-item{background:var(--ink);padding:30px 30px}
+  .why-item h3{font-family:var(--display);font-weight:600;font-size:18px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .why-item h3::before{content:"";width:7px;height:7px;background:var(--amber);border-radius:50%;flex:0 0 auto}
+  .why-item p{color:rgba(247,246,236,.66);font-size:15px}
+
+  /* process */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+  .step{border-top:2px solid var(--ink);padding-top:20px}
+  .step .n{font-family:var(--mono);font-size:13px;color:var(--amber-deep);letter-spacing:.06em}
+  .step h3{font-family:var(--display);font-weight:600;font-size:19px;margin:12px 0 8px}
+  .step p{color:var(--muted);font-size:15px}
+
+  /* metrics */
+  .metrics{background:var(--ink-2);color:var(--paper)}
+  .metrics .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:left}
+  .metric .figure{font-family:var(--display);font-weight:700;font-size:clamp(34px,5vw,52px);color:var(--amber);line-height:1;letter-spacing:-.02em}
+  .metric .cap{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(247,246,236,.6);margin-top:12px}
+
+  /* careers split */
+  .split{display:grid;grid-template-columns:1.1fr .9fr;gap:60px;align-items:center}
+  .split .lead-copy h2{font-family:var(--display);font-weight:600;font-size:clamp(30px,4.4vw,44px);letter-spacing:-.02em;line-height:1.05;margin:14px 0 18px}
+  .split .lead-copy p{color:var(--muted);font-size:17px;margin-bottom:26px}
+  .perks{border-left:2px solid var(--amber);padding-left:24px;display:flex;flex-direction:column;gap:18px}
+  .perks div h4{font-family:var(--display);font-weight:600;font-size:16px;margin-bottom:4px}
+  .perks div p{color:var(--muted);font-size:14px;margin:0}
+
+  /* contact */
+  .contact{background:var(--ink);color:var(--paper)}
+  .contact .sec-head h2{color:var(--paper)}
+  .contact .sec-head .eyebrow{color:var(--teal)}
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(247,246,236,.6);margin-bottom:8px}
+  .field input,.field textarea{
+    width:100%;background:var(--ink-2);border:1px solid var(--line-light);
+    color:var(--paper);font-family:var(--body);font-size:15px;padding:13px 14px;border-radius:2px;
+  }
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--amber)}
+  .field textarea{resize:vertical;min-height:120px}
+  .contact-detail{display:flex;flex-direction:column;gap:22px}
+  .contact-detail .row .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(247,246,236,.5);margin-bottom:6px}
+  .contact-detail .row a,.contact-detail .row span{font-size:17px;color:var(--paper)}
+  .contact-detail .row a:hover{color:var(--amber)}
+
+  /* footer */
+  footer{background:var(--ink);color:rgba(247,246,236,.55);border-top:1px solid var(--line-light);padding:36px 0}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;font-size:13px;font-family:var(--mono)}
+
+  @media (max-width:860px){
+    .nav-links{
+      position:absolute;top:66px;left:0;right:0;background:var(--paper);
+      flex-direction:column;gap:0;padding:8px 0;border-bottom:1px solid var(--line);
+      display:none;
+    }
+    .nav-links.open{display:flex}
+    .nav-links a{padding:14px 24px;width:100%}
+    .nav-links .btn{margin:8px 24px;text-align:center}
+    .menu-btn{display:block}
+    .grid,.why-grid{grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr 1fr}
+    .metrics .wrap{grid-template-columns:1fr 1fr}
+    .split,.contact-grid{grid-template-columns:1fr;gap:36px}
+  }
+  @media (max-width:520px){
+    .steps,.metrics .wrap{grid-template-columns:1fr}
+    section{padding:64px 0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .lead{animation:none!important;opacity:0}
+    .node-end{animation:none!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="SmartFlow Agency home">
+      <svg class="mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="6" cy="16" r="3.2" fill="#2FB39A"/>
+        <path d="M9 16 H20" stroke="#2FB39A" stroke-width="2" stroke-linecap="round"/>
+        <path d="M20 16 C24 16 24 9 27 9" stroke="#F5B301" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="27" cy="9" r="3.6" fill="#F5B301"/>
+      </svg>
+      SmartFlow
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#services">Services</a>
+      <a href="#why">Why us</a>
+      <a href="#process">How it works</a>
+      <a href="#careers">Careers</a>
+      <a href="#contact" class="btn btn-amber">Partner with us</a>
+    </nav>
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Lead generation · Appointment setting · South Africa</p>
+      <h1>Signal in.<br><span class="out">Sales out.</span></h1>
+      <p class="sub">SmartFlow Agency runs outbound campaigns for insurance and financial-services brands — a trained floor of agents, live performance tracking, and POPIA-compliant data handling from the first dial to the booked sale.</p>
+      <div class="hero-cta">
+        <a href="#contact" class="btn btn-amber">Partner with us</a>
+        <a href="#careers" class="btn btn-ghost">Join the floor</a>
+      </div>
+
+      <div class="flow" aria-hidden="true">
+        <div class="flow-track"></div>
+        <span class="lead d1"></span>
+        <span class="lead d2"></span>
+        <span class="lead d3"></span>
+        <span class="lead d4"></span>
+        <span class="node-end"></span>
+        <div class="flow-labels">
+          <span>Raw data</span>
+          <span>Dial &amp; qualify</span>
+          <span>Converted</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTOR STRIP -->
+  <div class="strip">
+    <div class="wrap">
+      <span class="lbl">Sectors we run</span>
+      <span class="dot"></span> Insurance
+      <span class="dot"></span> Financial services
+      <span class="dot"></span> Appointment setting
+      <span class="dot"></span> Outbound telesales
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">What we do</p>
+        <h2>Outbound, run properly.</h2>
+        <p>Not a list of cold names — structured campaigns built around your offer, your targets and your compliance obligations.</p>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <span class="num">01</span>
+          <h3>Lead generation</h3>
+          <p>Qualified pipeline built through targeted outbound dialling, screened against criteria you set.</p>
+        </div>
+        <div class="card">
+          <span class="num">02</span>
+          <h3>Appointment setting</h3>
+          <p>Booked, confirmed appointments that show up — so your closers spend their time selling, not chasing.</p>
+        </div>
+        <div class="card">
+          <span class="num">03</span>
+          <h3>Outbound telesales</h3>
+          <p>End-to-end campaigns where our agents pitch, handle objections and close on your behalf.</p>
+        </div>
+        <div class="card">
+          <span class="num">04</span>
+          <h3>Campaign management</h3>
+          <p>Scripting, disposition logic, call scoring and daily coaching — managed against your numbers, not ours.</p>
+        </div>
+        <div class="card">
+          <span class="num">05</span>
+          <h3>Compliant data handling</h3>
+          <p>POPIA-aligned processes for consent, storage and opt-outs — documented and auditable.</p>
+        </div>
+        <div class="card">
+          <span class="num">06</span>
+          <h3>Reporting you can trust</h3>
+          <p>You see the same figures we do, reconciled against source data — no black boxes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section id="why" class="why">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Why SmartFlow</p>
+        <h2>A floor that's actually managed.</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why-item">
+          <h3>Trained agents</h3>
+          <p>Our floor works structured objection-handling frameworks — acknowledge, relate, reframe, close — not scripts read cold.</p>
+        </div>
+        <div class="why-item">
+          <h3>Live performance tracking</h3>
+          <p>A real-time Floor Tracker shows dials, contacts and conversions by agent, every single day.</p>
+        </div>
+        <div class="why-item">
+          <h3>Predictive dialling infrastructure</h3>
+          <p>Vicidial tuned for connect rates and agent talk-time, so more of the day is spent in live conversations.</p>
+        </div>
+        <div class="why-item">
+          <h3>Compliance-first</h3>
+          <p>POPIA is built into the workflow from the start — consent, opt-outs and record-keeping handled as standard.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="process">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">How it works</p>
+        <h2>From brief to booked sale.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="n">Step 01</span>
+          <h3>Brief &amp; target</h3>
+          <p>We map your offer, audience and success metric, then build the campaign and data plan.</p>
+        </div>
+        <div class="step">
+          <span class="n">Step 02</span>
+          <h3>Dial &amp; qualify</h3>
+          <p>The floor goes live. Agents dial, qualify and handle objections against agreed criteria.</p>
+        </div>
+        <div class="step">
+          <span class="n">Step 03</span>
+          <h3>Convert &amp; book</h3>
+          <p>Qualified prospects are closed or booked straight into your calendar or CRM.</p>
+        </div>
+        <div class="step">
+          <span class="n">Step 04</span>
+          <h3>Report &amp; optimise</h3>
+          <p>Daily numbers, weekly review, and continuous tuning of script, targeting and pacing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAREERS -->
+  <section id="careers">
+    <div class="wrap split">
+      <div class="lead-copy">
+        <p class="eyebrow">Careers</p>
+        <h2>Join the floor.</h2>
+        <p>We're always looking for outbound agents who can hold a conversation and close. Commission-based, remote-friendly, with real coaching and a team that tracks your wins.</p>
+        <a href="mailto:careers@smartflowagency.co.za?subject=Agent%20application" class="btn btn-primary">Apply to careers@smartflowagency.co.za</a>
+      </div>
+      <div class="perks">
+        <div><h4>Real coaching</h4><p>Daily feedback and objection-handling frameworks, not sink-or-swim.</p></div>
+        <div><h4>Uncapped commission</h4><p>Tiered bonuses tied to monthly sales — your effort shows up in your pay.</p></div>
+        <div><h4>Work remotely</h4><p>Run the campaign from home on our dialler, with the team behind you.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="contact">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Partner with us</p>
+        <h2>Let's talk about your pipeline.</h2>
+      </div>
+      <div class="contact-grid">
+        <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+          <input type="hidden" name="form-name" value="contact">
+          <p style="display:none"><label>Leave blank: <input name="bot-field"></label></p>
+          <div class="field"><label for="name">Your name</label><input id="name" name="name" type="text" placeholder="Jane Dlamini" required></div>
+          <div class="field"><label for="company">Company</label><input id="company" name="company" type="text" placeholder="Company name"></div>
+          <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" placeholder="you@company.co.za" required></div>
+          <div class="field"><label for="msg">What do you need?</label><textarea id="msg" name="message" placeholder="Tell us about the campaign you have in mind..." required></textarea></div>
+          <button class="btn btn-amber" type="submit">Send enquiry</button>
+        </form>
+        <div class="contact-detail">
+          <div class="row"><div class="k">Partnerships</div><a href="mailto:partnerships@smartflowagency.co.za">partnerships@smartflowagency.co.za</a></div>
+          <div class="row"><div class="k">Careers</div><a href="mailto:careers@smartflowagency.co.za">careers@smartflowagency.co.za</a></div>
+          <div class="row"><div class="k">General</div><a href="mailto:hello@smartflowagency.co.za">hello@smartflowagency.co.za</a></div>
+          <div class="row"><div class="k">Based in</div><span>Cape Town, South Africa</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 SmartFlow Agency · POPIA-compliant outbound</span>
+    <span>Cape Town, South Africa · hello@smartflowagency.co.za</span>
+  </div>
+</footer>
+
+<script>
+  // mobile menu
+  var menuBtn = document.getElementById('menuBtn');
+  var navLinks = document.getElementById('navLinks');
+  menuBtn.addEventListener('click', function(){ navLinks.classList.toggle('open'); });
+  navLinks.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ navLinks.classList.remove('open'); });
+  });
+</script>
+</body>
+</html>
