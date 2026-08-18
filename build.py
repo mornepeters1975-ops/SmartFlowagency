@@ -68,11 +68,22 @@ class Agent:
         return f"{self.name} {self.surname}".strip()
 
 
-def load_roster(path: Path) -> dict[str, Agent]:
-    """Parse the Agent Tracker workbook: one sheet per team."""
+def load_roster(path: Path, sheet_filter: Optional[set[str]] = None,
+                 team_label: Optional[str] = None) -> dict[str, Agent]:
+    """Parse the Agent Tracker workbook: one sheet per team.
+
+    Some trackers are shared across multiple client companies (one sheet per
+    company/campaign-leader team). Pass sheet_filter (case-insensitive sheet
+    names) to load only specific teams, and team_label to relabel them —
+    e.g. the tracker calls a sheet "Morne Peters" but the business is
+    "SmartFlow Agency".
+    """
     sheets = pd.read_excel(path, sheet_name=None, dtype=str)
     roster: dict[str, Agent] = {}
+    wanted = {s.strip().lower() for s in sheet_filter} if sheet_filter else None
     for team, df in sheets.items():
+        if wanted is not None and team.strip().lower() not in wanted:
+            continue
         df = df.rename(columns=lambda c: str(c).strip())
         required = {"Name", "Surname", "Agent number"}
         if not required.issubset(df.columns):
@@ -87,7 +98,7 @@ def load_roster(path: Path) -> dict[str, Agent]:
                 code=code,
                 name=_clean_str(row.get("Name")) or "",
                 surname=_clean_str(row.get("Surname")) or "",
-                team=team.strip(),
+                team=team_label or team.strip(),
                 vicidial_user=vicidial.upper() if vicidial else None,
             )
     return roster
@@ -174,6 +185,7 @@ class Normaliser:
 # ---------------------------------------------------------------------------
 
 AGENT_CODE_COLUMN_CANDIDATES = ["Agent", "Agent Code", "Agent Number", "Code"]
+OFFICE_COLUMN_CANDIDATES = ["Office", "Company", "Client"]
 
 
 def _find_agent_column(df: pd.DataFrame) -> str:
@@ -186,8 +198,31 @@ def _find_agent_column(df: pd.DataFrame) -> str:
     )
 
 
-def parse_production_report(path: Path, normaliser: Normaliser) -> tuple[pd.DataFrame, dict[str, float]]:
-    """Returns (per-agent metrics df, totals row from the report itself)."""
+def _office_mask(df: pd.DataFrame, office_filter: Optional[str]) -> pd.Series:
+    """True = keep. Some source files are shared across multiple client
+    companies via an Office/Company column. When office_filter is set, keep
+    rows tagged for that company plus rows with no company tag at all (those
+    still get a chance to resolve through the roster); drop rows explicitly
+    tagged for a different company. No-op (keep everything) when there's no
+    such column or no filter was requested — preserves single-tenant use."""
+    if not office_filter:
+        return pd.Series(True, index=df.index)
+    for candidate in OFFICE_COLUMN_CANDIDATES:
+        if candidate in df.columns:
+            office = df[candidate].astype(str).str.strip().str.lower()
+            target = office_filter.strip().lower()
+            return (office == target) | (office == "") | (office == "nan")
+    return pd.Series(True, index=df.index)
+
+
+def parse_production_report(path: Path, normaliser: Normaliser,
+                             office_filter: Optional[str] = None) -> tuple[pd.DataFrame, dict[str, float]]:
+    """Returns (per-agent metrics df, totals row to reconcile against).
+
+    Without office_filter, totals come from the report's own TOTAL row (an
+    independent check against source). With office_filter, the report's
+    TOTAL row covers every company sharing the file, not just this one, so
+    the reconciliation target is the sum of the scoped rows themselves."""
     df = pd.read_excel(path, sheet_name="Agent Activity")
     df = df.rename(columns=lambda c: str(c).strip())
     agent_col = _find_agent_column(df)
@@ -195,6 +230,7 @@ def parse_production_report(path: Path, normaliser: Normaliser) -> tuple[pd.Data
     is_total = df[agent_col].astype(str).str.strip().str.upper() == "TOTAL"
     totals_rows = df[is_total]
     data_rows = df[~is_total].copy()
+    data_rows = data_rows[_office_mask(data_rows, office_filter)]
 
     metric_cols = ["Submissions", "Successful", "Failed", "Quoted"]
     for col in metric_cols:
@@ -205,7 +241,9 @@ def parse_production_report(path: Path, normaliser: Normaliser) -> tuple[pd.Data
     data_rows["agent_code"] = data_rows[agent_col].apply(normaliser.resolve)
     per_agent = data_rows.groupby("agent_code")[metric_cols].sum()
 
-    if len(totals_rows):
+    if office_filter:
+        report_totals = {col: float(data_rows[col].sum()) for col in metric_cols}
+    elif len(totals_rows):
         report_totals = {col: float(pd.to_numeric(totals_rows[col], errors="coerce").fillna(0).sum()) for col in metric_cols}
     else:
         report_totals = {col: float(data_rows[col].sum()) for col in metric_cols}
@@ -235,15 +273,20 @@ def _lead_files_most_recent_first(input_dir: Path) -> list[Path]:
     return [p for _, p in files]
 
 
-def build_bkref_lookup(input_dir: Path, normaliser: Normaliser) -> dict[str, str]:
+def build_bkref_lookup(input_dir: Path, normaliser: Normaliser,
+                        office_filter: Optional[str] = None) -> dict[str, str]:
     """bk_Ref (Reference) -> normalised agent code. Most recent lead file wins;
-    older files only fill in refs not already seen."""
+    older files only fill in refs not already seen. Rows explicitly tagged
+    for a different company (see _office_mask) are skipped entirely, so
+    their bk_Refs never enter the lookup at all — a later Vendor Report row
+    for one of those refs then reads as out-of-scope, not unattributed."""
     lookup: dict[str, str] = {}
     for path in _lead_files_most_recent_first(input_dir):
         df = pd.read_csv(path, dtype=str)
         df = df.rename(columns=lambda c: str(c).strip())
         if "Reference" not in df.columns or "Submitted By" not in df.columns:
             continue
+        df = df[_office_mask(df, office_filter)]
         for _, row in df.iterrows():
             ref = _clean_str(row.get("Reference"))
             if not ref or ref in lookup:
@@ -280,11 +323,22 @@ class VendorResult:
     excluded_zero_value: list[dict]
 
 
-def parse_vendor_report(path: Path, bkref_lookup: dict[str, str]) -> VendorResult:
+OUT_OF_SCOPE = "_OutOfScope"
+
+
+def parse_vendor_report(path: Path, bkref_lookup: dict[str, str],
+                         strict_scope: bool = False) -> VendorResult:
+    """strict_scope=True means bkref_lookup was itself built from a single
+    company's leads (see build_bkref_lookup's office_filter): a bk_Ref that
+    doesn't resolve almost certainly belongs to a different company sharing
+    this file, not a genuine attribution problem — so it's dropped silently
+    instead of being logged as unattributed / dumped into Unassigned."""
     contacts, _ = _read_vendor_tab(path, "Contacts")
     sales, sales_total_rows = _read_vendor_tab(path, "Gross Sales")
 
-    if len(sales_total_rows):
+    if strict_scope:
+        report_gross_sales_total = None  # the file's Total row spans every company — not our ground truth
+    elif len(sales_total_rows):
         report_gross_sales_total = float(
             pd.to_numeric(sales_total_rows["Gross SPV (Ex VAT)"], errors="coerce").fillna(0).sum()
         )
@@ -299,18 +353,23 @@ def parse_vendor_report(path: Path, bkref_lookup: dict[str, str]) -> VendorResul
             ref = _clean_str(ref)
             code = bkref_lookup.get(ref) if ref else None
             if not code:
-                if ref:
-                    unattributed.append(ref)
-                code = UNASSIGNED
+                if strict_scope:
+                    code = OUT_OF_SCOPE
+                else:
+                    if ref:
+                        unattributed.append(ref)
+                    code = UNASSIGNED
             codes.append(code)
         return pd.Series(codes, index=df.index)
 
     contacts = contacts.copy()
     contacts["agent_code"] = attribute(contacts)
+    contacts = contacts[contacts["agent_code"] != OUT_OF_SCOPE]
     contacted = contacts.groupby("agent_code").size()
 
     sales = sales.copy()
     sales["agent_code"] = attribute(sales)
+    sales = sales[sales["agent_code"] != OUT_OF_SCOPE]
     sales["Gross SPV (Ex VAT)"] = pd.to_numeric(sales["Gross SPV (Ex VAT)"], errors="coerce").fillna(0)
 
     is_zero = sales["Gross SPV (Ex VAT)"] == 0
@@ -368,11 +427,18 @@ def _latest_production_file(input_dir: Path) -> Path:
 # ---------------------------------------------------------------------------
 
 def assemble(input_dir: Path, tracker_path: Path, aliases_path: Path,
-             as_of: Optional[date] = None) -> dict:
+             as_of: Optional[date] = None, tracker_sheets: Optional[set[str]] = None,
+             team_label: Optional[str] = None, office_filter: Optional[str] = None) -> dict:
+    """tracker_sheets/team_label/office_filter scope a multi-tenant source
+    (one Agent Tracker / Production Report / lead export shared across
+    several client companies) down to a single company: tracker_sheets picks
+    which tracker sheet(s) are that company's roster, team_label relabels
+    them for display, and office_filter matches the Office/Company column
+    where the Production Report and lead CSVs carry one."""
     as_of = as_of or date.today()
 
     aliases = load_aliases(aliases_path)
-    roster = load_roster(tracker_path)
+    roster = load_roster(tracker_path, sheet_filter=tracker_sheets, team_label=team_label)
     if not roster:
         raise ReconciliationError(f"Agent Tracker at {tracker_path} produced an empty roster")
 
@@ -388,20 +454,20 @@ def assemble(input_dir: Path, tracker_path: Path, aliases_path: Path,
     )
 
     production_path = _latest_production_file(input_dir)
-    per_agent_production, production_totals = parse_production_report(production_path, normaliser)
+    per_agent_production, production_totals = parse_production_report(production_path, normaliser, office_filter)
 
-    bkref_lookup = build_bkref_lookup(input_dir, normaliser)
+    bkref_lookup = build_bkref_lookup(input_dir, normaliser, office_filter)
     vendor_path = input_dir / "Marketing_KPI_Vendor_Report_-_Detail.xlsx"
     if not vendor_path.exists():
         raise FileNotFoundError(f"Vendor report not found at {vendor_path}")
-    vendor = parse_vendor_report(vendor_path, bkref_lookup)
+    vendor = parse_vendor_report(vendor_path, bkref_lookup, strict_scope=bool(office_filter))
 
     # trend across the month, from every dated Production Report present
     month_files = _production_files_in_month(input_dir, as_of.year, as_of.month)
     trend_by_agent: dict[str, list[dict]] = {code: [] for code in roster_codes}
     trend_by_agent[UNASSIGNED] = []
     for d, path in month_files:
-        per_agent, _ = parse_production_report(path, normaliser)
+        per_agent, _ = parse_production_report(path, normaliser, office_filter)
         for code, row in per_agent.iterrows():
             trend_by_agent.setdefault(code, []).append({
                 "date": d.isoformat(),
@@ -538,13 +604,24 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--out-dir", type=Path, default=Path("data"))
     parser.add_argument("--agent", type=str, default=None, help="Print one agent's numbers to the terminal")
     parser.add_argument("--as-of", type=str, default=None, help="YYYY-MM-DD, defaults to today")
+    parser.add_argument("--tracker-sheets", type=str, default=None,
+                         help="Comma-separated Agent Tracker sheet name(s) to use, for a tracker shared "
+                              "across multiple client companies (default: use every sheet)")
+    parser.add_argument("--team-label", type=str, default=None,
+                         help="Display name for the scoped team, overriding the tracker sheet name(s)")
+    parser.add_argument("--office", type=str, default=None,
+                         help="Office/Company value to scope the Production Report and lead CSVs to, "
+                              "for sources shared across multiple client companies")
     args = parser.parse_args(argv)
 
     tracker_path = args.tracker or (args.input_dir / "YesUCan_Agent_Tracker.xlsx")
     as_of = datetime.strptime(args.as_of, "%Y-%m-%d").date() if args.as_of else None
+    tracker_sheets = {s.strip() for s in args.tracker_sheets.split(",")} if args.tracker_sheets else None
 
     try:
-        result = assemble(args.input_dir, tracker_path, args.aliases, as_of=as_of)
+        result = assemble(args.input_dir, tracker_path, args.aliases, as_of=as_of,
+                           tracker_sheets=tracker_sheets, team_label=args.team_label,
+                           office_filter=args.office)
     except ReconciliationError as e:
         print(f"BUILD FAILED — reconciliation error\n{e}", file=sys.stderr)
         return 1
