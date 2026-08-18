@@ -24,57 +24,86 @@
   <p class="eyebrow">All Agents</p>
   <h1 style="font-family:var(--display);font-size:26px;margin:6px 0 24px">Manager view</h1>
 
-  <div id="banner"></div>
+  <div id="manager-gate" class="identify">
+    <p class="eyebrow">Manager access</p>
+    <h1>Enter the manager passcode</h1>
+    <p>This view shows every agent's figures — restricted to managers.</p>
+    <form id="manager-gate-form">
+      <input id="manager-code-input" type="password" placeholder="Passcode" autocomplete="off">
+      <button type="submit">Unlock</button>
+    </form>
+    <div class="err" id="manager-gate-err"></div>
+  </div>
 
-  <section class="panel">
-    <h2>All agents</h2>
-    <div class="controls">
-      <select id="team-filter"><option value="">All teams</option></select>
-      <input id="search" type="text" placeholder="Search name or code…">
-    </div>
-    <div style="overflow-x:auto">
-      <table id="agents-table">
-        <thead>
-          <tr>
-            <th data-key="code">Code</th>
-            <th data-key="name">Name</th>
-            <th data-key="team">Team</th>
-            <th data-key="submissions">Submissions</th>
-            <th data-key="successful">Successful</th>
-            <th data-key="failed">Failed</th>
-            <th data-key="contacted">Contacted</th>
-            <th data-key="quoted">Quoted</th>
-            <th data-key="closed">Closed</th>
-            <th data-key="final_sale">Final Sale</th>
-          </tr>
-        </thead>
-        <tbody id="agents-tbody"></tbody>
+  <div id="manager-unlocked" style="display:none">
+    <div id="banner"></div>
+
+    <section class="panel">
+      <h2>Team totals</h2>
+      <div style="overflow-x:auto">
+        <table id="team-totals-table">
+          <thead>
+            <tr>
+              <th>Team</th><th>Submissions</th><th>Successful</th><th>Failed</th>
+              <th>Contacted</th><th>Quoted</th><th>Closed</th><th>Final Sale</th><th id="team-commission-head">Commission</th>
+            </tr>
+          </thead>
+          <tbody id="team-totals-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>All agents</h2>
+      <div class="controls">
+        <select id="team-filter"><option value="">All teams</option></select>
+        <input id="search" type="text" placeholder="Search name or code…">
+      </div>
+      <div style="overflow-x:auto">
+        <table id="agents-table">
+          <thead>
+            <tr>
+              <th data-key="code">Code</th>
+              <th data-key="name">Name</th>
+              <th data-key="team">Team</th>
+              <th data-key="submissions">Submissions</th>
+              <th data-key="successful">Successful</th>
+              <th data-key="failed">Failed</th>
+              <th data-key="contacted">Contacted</th>
+              <th data-key="quoted">Quoted</th>
+              <th data-key="closed">Closed</th>
+              <th data-key="final_sale">Final Sale</th>
+              <th data-key="commission" id="agents-commission-head">Commission</th>
+            </tr>
+          </thead>
+          <tbody id="agents-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Unassigned bucket</h2>
+      <p class="small-note">Activity that could not be attributed to a roster agent. Fix the roster or aliases.json, not the numbers.</p>
+      <div class="tiles" id="unassigned-tiles" style="margin-top:16px"></div>
+      <div>
+        <p class="eyebrow" style="margin-top:10px">Unresolved agent codes seen in source files</p>
+        <ul class="chip-list" id="unresolved-codes"></ul>
+      </div>
+      <div>
+        <p class="eyebrow" style="margin-top:16px">bk_Refs with no matching lead file</p>
+        <ul class="chip-list" id="unattributed-refs"></ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Excluded zero-value policies</h2>
+      <p class="small-note">Gross SPV (Ex VAT) = R0.00 — excluded from Closed / Final Sale everywhere. Manager-only view.</p>
+      <table id="excluded-table" style="margin-top:14px">
+        <thead><tr><th>bk_Ref</th><th>Agent code</th></tr></thead>
+        <tbody id="excluded-tbody"></tbody>
       </table>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2>Unassigned bucket</h2>
-    <p class="small-note">Activity that could not be attributed to a roster agent. Fix the roster or aliases.json, not the numbers.</p>
-    <div class="tiles" id="unassigned-tiles" style="margin-top:16px"></div>
-    <div>
-      <p class="eyebrow" style="margin-top:10px">Unresolved agent codes seen in source files</p>
-      <ul class="chip-list" id="unresolved-codes"></ul>
-    </div>
-    <div>
-      <p class="eyebrow" style="margin-top:16px">bk_Refs with no matching lead file</p>
-      <ul class="chip-list" id="unattributed-refs"></ul>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2>Excluded zero-value policies</h2>
-    <p class="small-note">Gross SPV (Ex VAT) = R0.00 — excluded from Closed / Final Sale everywhere. Manager-only view.</p>
-    <table id="excluded-table" style="margin-top:14px">
-      <thead><tr><th>bk_Ref</th><th>Agent code</th></tr></thead>
-      <tbody id="excluded-tbody"></tbody>
-    </table>
-  </section>
+    </section>
+  </div>
 </main>
 
 <footer>Data as of <span id="footer-date">—</span> · SmartFlow Agency internal tool</footer>

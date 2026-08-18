@@ -428,13 +428,19 @@ def _latest_production_file(input_dir: Path) -> Path:
 
 def assemble(input_dir: Path, tracker_path: Path, aliases_path: Path,
              as_of: Optional[date] = None, tracker_sheets: Optional[set[str]] = None,
-             team_label: Optional[str] = None, office_filter: Optional[str] = None) -> dict:
+             team_label: Optional[str] = None, office_filter: Optional[str] = None,
+             commission_rate: Optional[float] = None, commission_team: Optional[str] = None) -> dict:
     """tracker_sheets/team_label/office_filter scope a multi-tenant source
     (one Agent Tracker / Production Report / lead export shared across
     several client companies) down to a single company: tracker_sheets picks
     which tracker sheet(s) are that company's roster, team_label relabels
     them for display, and office_filter matches the Office/Company column
-    where the Production Report and lead CSVs carry one."""
+    where the Production Report and lead CSVs carry one.
+
+    commission_rate/commission_team compute each agent's commission as
+    final_sale * commission_rate, restricted to agents on commission_team
+    (or every agent if commission_team is omitted) — the rate is business
+    policy, may differ per team, and must never be applied blind."""
     as_of = as_of or date.today()
 
     aliases = load_aliases(aliases_path)
@@ -484,18 +490,22 @@ def assemble(input_dir: Path, tracker_path: Path, aliases_path: Path,
     for code in sorted(all_codes):
         agent = roster.get(code)
         prod = per_agent_production.loc[code] if code in per_agent_production.index else None
+        final_sale = float(vendor.final_sale.get(code, 0.0))
+        team = agent.team if agent else None
+        earns_commission = commission_rate is not None and (commission_team is None or team == commission_team)
         agents_out.append({
             "code": code,
             "name": agent.name if agent else None,
             "surname": agent.surname if agent else None,
-            "team": agent.team if agent else None,
+            "team": team,
             "submissions": int(prod["Submissions"]) if prod is not None else 0,
             "successful": int(prod["Successful"]) if prod is not None else 0,
             "failed": int(prod["Failed"]) if prod is not None else 0,
             "quoted": int(prod["Quoted"]) if prod is not None else 0,
             "contacted": int(vendor.contacted.get(code, 0)),
             "closed": int(vendor.closed.get(code, 0)),
-            "final_sale": float(vendor.final_sale.get(code, 0.0)),
+            "final_sale": final_sale,
+            "commission": round(final_sale * commission_rate, 2) if earns_commission else 0.0,
             "trend": trend_by_agent.get(code, []),
         })
 
@@ -514,6 +524,21 @@ def assemble(input_dir: Path, tracker_path: Path, aliases_path: Path,
 
     reconciliation = run_reconciliation(agents_out, production_totals, vendor, unassigned_bucket)
 
+    team_totals: dict[str, dict] = {}
+    for a in agents_out:
+        t = team_totals.setdefault(a["team"], {
+            "team": a["team"], "submissions": 0, "successful": 0, "failed": 0,
+            "contacted": 0, "quoted": 0, "closed": 0, "final_sale": 0.0, "commission": 0.0,
+        })
+        for key in ("submissions", "successful", "failed", "contacted", "quoted", "closed"):
+            t[key] += a[key]
+        # accumulate raw, round once below — rounding on every addition drifts by a cent over many agents
+        t["final_sale"] += a["final_sale"]
+        t["commission"] += a["commission"]
+    for t in team_totals.values():
+        t["final_sale"] = round(t["final_sale"], 2)
+        t["commission"] = round(t["commission"], 2)
+
     summary = {
         "generated_at": datetime.now().isoformat(),
         "as_of": as_of.isoformat(),
@@ -524,6 +549,9 @@ def assemble(input_dir: Path, tracker_path: Path, aliases_path: Path,
         "unassigned": unassigned_bucket,
         "excluded_zero_value_policies": vendor.excluded_zero_value,
         "teams": sorted({a.team for a in roster.values()}),
+        "team_totals": sorted(team_totals.values(), key=lambda t: -t["final_sale"]),
+        "commission_rate": commission_rate,
+        "commission_team": commission_team,
     }
 
     return {"agents": agents_out, "summary": summary, "_normaliser": normaliser}
@@ -593,6 +621,8 @@ def print_agent(result: dict, code: str) -> None:
     print(f"  Quoted      : {agent['quoted']}")
     print(f"  Closed      : {agent['closed']}")
     print(f"  Final Sale  : R{agent['final_sale']:,.2f}")
+    if agent.get("commission"):
+        print(f"  Commission  : R{agent['commission']:,.2f}")
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -612,6 +642,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--office", type=str, default=None,
                          help="Office/Company value to scope the Production Report and lead CSVs to, "
                               "for sources shared across multiple client companies")
+    parser.add_argument("--commission-rate", type=float, default=None,
+                         help="Commission rate applied to each agent's Final Sale, e.g. 0.60 for 60%%")
+    parser.add_argument("--commission-team", type=str, default=None,
+                         help="Restrict --commission-rate to agents on this team (default: every agent in output)")
     args = parser.parse_args(argv)
 
     tracker_path = args.tracker or (args.input_dir / "YesUCan_Agent_Tracker.xlsx")
@@ -621,7 +655,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     try:
         result = assemble(args.input_dir, tracker_path, args.aliases, as_of=as_of,
                            tracker_sheets=tracker_sheets, team_label=args.team_label,
-                           office_filter=args.office)
+                           office_filter=args.office, commission_rate=args.commission_rate,
+                           commission_team=args.commission_team)
     except ReconciliationError as e:
         print(f"BUILD FAILED — reconciliation error\n{e}", file=sys.stderr)
         return 1

@@ -92,6 +92,7 @@ main{padding:40px 0 80px}
 .tile.accent{background:var(--ink);color:var(--paper)}
 .tile.accent .label{color:rgba(244,246,245,.65)}
 .tile.accent .value{color:var(--amber)}
+.tile.accent.commission .value{color:var(--teal)}
 
 section.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px 28px;margin-bottom:24px}
 section.panel h2{font-family:var(--display);font-size:16px;margin-bottom:18px}
