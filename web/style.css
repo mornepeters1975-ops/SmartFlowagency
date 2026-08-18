@@ -1,0 +1,141 @@
+:root{
+  --ink:#0C2925;
+  --ink-2:#113B34;
+  --ink-3:#17493F;
+  --paper:#F4F6F5;
+  --paper-2:#EAEEEC;
+  --amber:#F5B301;
+  --amber-deep:#D99A00;
+  --teal:#2FB39A;
+  --red:#C1442A;
+  --muted:#5C6B66;
+  --line:rgba(12,41,37,.12);
+  --display:'Space Grotesk',sans-serif;
+  --body:'IBM Plex Sans',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+  --maxw:1180px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--body);
+  color:var(--ink);
+  background:var(--paper);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.mono{font-family:var(--mono);letter-spacing:.02em}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+header{
+  border-bottom:1px solid var(--line);
+  background:var(--paper);
+  position:sticky;top:0;z-index:10;
+}
+.header-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;max-width:var(--maxw);margin:0 auto;
+}
+.brand{font-family:var(--display);font-weight:700;font-size:19px;color:var(--ink)}
+.brand span{color:var(--teal)}
+nav.views{display:flex;gap:6px}
+nav.views a{
+  font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  padding:8px 14px;border-radius:999px;border:1px solid var(--line);text-decoration:none;color:var(--muted);
+}
+nav.views a.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+main{padding:40px 0 80px}
+
+/* ---------- login / identify ---------- */
+.identify{
+  max-width:420px;margin:80px auto;background:#fff;border:1px solid var(--line);
+  border-radius:16px;padding:36px;text-align:center;
+}
+.identify h1{font-family:var(--display);font-size:22px;margin:8px 0 6px}
+.identify p{color:var(--muted);font-size:14px;margin-bottom:22px}
+.identify form{display:flex;gap:10px}
+.identify input{
+  flex:1;font-family:var(--mono);font-size:16px;letter-spacing:.04em;text-transform:uppercase;
+  padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);
+}
+.identify input:focus{outline:2px solid var(--teal);outline-offset:1px}
+.identify button{
+  font-family:var(--body);font-weight:600;font-size:14px;color:var(--ink);background:var(--amber);
+  border:none;border-radius:10px;padding:12px 20px;cursor:pointer;
+}
+.identify button:hover{background:var(--amber-deep)}
+.identify .err{color:var(--red);font-size:13px;margin-top:14px;min-height:16px}
+
+/* ---------- metric tiles ---------- */
+.agent-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px}
+.agent-head h1{font-family:var(--display);font-size:28px}
+.agent-head .meta{color:var(--muted);font-size:14px}
+.agent-head .logout{font-family:var(--mono);font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;border:none}
+
+.tiles{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:40px;
+}
+.tile{
+  background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 18px;
+}
+.tile .label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tile .value{font-family:var(--display);font-size:34px;font-weight:700;color:var(--ink);margin-top:8px}
+.tile.accent{background:var(--ink);color:var(--paper)}
+.tile.accent .label{color:rgba(244,246,245,.65)}
+.tile.accent .value{color:var(--amber)}
+
+section.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px 28px;margin-bottom:24px}
+section.panel h2{font-family:var(--display);font-size:16px;margin-bottom:18px}
+
+/* ---------- funnel ---------- */
+.funnel{display:flex;flex-direction:column;gap:10px}
+.funnel-row{display:grid;grid-template-columns:120px 1fr 70px;align-items:center;gap:14px}
+.funnel-row .fname{font-size:13px;color:var(--muted)}
+.funnel-row .fbar-track{background:var(--paper-2);border-radius:6px;height:22px;overflow:hidden}
+.funnel-row .fbar{background:linear-gradient(90deg,var(--teal),var(--ink-3));height:100%;border-radius:6px;min-width:2px}
+.funnel-row .fval{font-family:var(--mono);font-size:13px;text-align:right}
+
+/* ---------- trend ---------- */
+.trend-legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.trend-legend span{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.trend-legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+svg.trend{width:100%;height:220px}
+
+/* ---------- manager view ---------- */
+.banner{
+  border-radius:14px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.banner.ok{background:rgba(47,179,154,.12);border:1px solid rgba(47,179,154,.4)}
+.banner.fail{background:rgba(193,68,42,.1);border:1px solid rgba(193,68,42,.4)}
+.banner .btitle{font-family:var(--display);font-weight:700;font-size:15px}
+.banner.ok .btitle{color:var(--ink-3)}
+.banner.fail .btitle{color:var(--red)}
+.banner .bmeta{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+.controls{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.controls select, .controls input{
+  font-family:var(--body);font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;
+}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2),th:nth-child(3),td:nth-child(3){text-align:left}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;user-select:none;white-space:nowrap}
+th.sorted::after{content:" \25BE"}
+tbody tr:hover{background:var(--paper)}
+td.code{font-family:var(--mono)}
+.unassigned-row td{color:var(--red)}
+
+.small-note{font-size:12px;color:var(--muted);margin-top:10px}
+ul.chip-list{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+ul.chip-list li{font-family:var(--mono);font-size:12px;background:var(--paper-2);border-radius:999px;padding:4px 10px}
+
+footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;color:var(--muted);font-size:12px}
