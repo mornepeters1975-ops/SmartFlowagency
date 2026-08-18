@@ -1,0 +1,22 @@
+{
+  "_comment": "Agent-code normalisation overrides. Extend this file, not the code. All keys are matched case-insensitively after the raw value has been uppercased and whitespace-collapsed.",
+
+  "code_aliases": {
+    "PCOO5": "PC005",
+    "MP12O": "MP120",
+    "PCC014": "PC014",
+    "PCC020": "PC020",
+    "PC04": "PC004",
+    "MLL108": "ML108",
+    "ML10P8": "ML108"
+  },
+
+  "name_aliases": {
+    "GARY OCTOBER": "MP130"
+  },
+
+  "vicidial_aliases": {
+    "6038": "ANM101",
+    "5024": "IG021"
+  }
+}

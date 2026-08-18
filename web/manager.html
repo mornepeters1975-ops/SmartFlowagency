@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager View — SmartFlow Agency</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">SmartFlow <span>Agency</span> · Performance</div>
+    <nav class="views">
+      <a href="index.html">Agent</a>
+      <a href="manager.html" class="active">Manager</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="eyebrow">All Agents</p>
+  <h1 style="font-family:var(--display);font-size:26px;margin:6px 0 24px">Manager view</h1>
+
+  <div id="banner"></div>
+
+  <section class="panel">
+    <h2>All agents</h2>
+    <div class="controls">
+      <select id="team-filter"><option value="">All teams</option></select>
+      <input id="search" type="text" placeholder="Search name or code…">
+    </div>
+    <div style="overflow-x:auto">
+      <table id="agents-table">
+        <thead>
+          <tr>
+            <th data-key="code">Code</th>
+            <th data-key="name">Name</th>
+            <th data-key="team">Team</th>
+            <th data-key="submissions">Submissions</th>
+            <th data-key="successful">Successful</th>
+            <th data-key="failed">Failed</th>
+            <th data-key="contacted">Contacted</th>
+            <th data-key="quoted">Quoted</th>
+            <th data-key="closed">Closed</th>
+            <th data-key="final_sale">Final Sale</th>
+          </tr>
+        </thead>
+        <tbody id="agents-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Unassigned bucket</h2>
+    <p class="small-note">Activity that could not be attributed to a roster agent. Fix the roster or aliases.json, not the numbers.</p>
+    <div class="tiles" id="unassigned-tiles" style="margin-top:16px"></div>
+    <div>
+      <p class="eyebrow" style="margin-top:10px">Unresolved agent codes seen in source files</p>
+      <ul class="chip-list" id="unresolved-codes"></ul>
+    </div>
+    <div>
+      <p class="eyebrow" style="margin-top:16px">bk_Refs with no matching lead file</p>
+      <ul class="chip-list" id="unattributed-refs"></ul>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Excluded zero-value policies</h2>
+    <p class="small-note">Gross SPV (Ex VAT) = R0.00 — excluded from Closed / Final Sale everywhere. Manager-only view.</p>
+    <table id="excluded-table" style="margin-top:14px">
+      <thead><tr><th>bk_Ref</th><th>Agent code</th></tr></thead>
+      <tbody id="excluded-tbody"></tbody>
+    </table>
+  </section>
+</main>
+
+<footer>Data as of <span id="footer-date">—</span> · SmartFlow Agency internal tool</footer>
+
+<script src="app.js"></script>
+<script src="manager.js"></script>
+</body>
+</html>
