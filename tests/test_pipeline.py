@@ -20,6 +20,12 @@ def result():
     return assemble(INPUT_DIR, TRACKER, ALIASES, as_of=date(2026, 8, 15))
 
 
+@pytest.fixture(scope="module")
+def result_with_commission():
+    return assemble(INPUT_DIR, TRACKER, ALIASES, as_of=date(2026, 8, 15),
+                     commission_rate=0.60, commission_team="Team A")
+
+
 def agent(result, code):
     match = next(a for a in result["agents"] if a["code"] == code)
     return match
@@ -117,9 +123,49 @@ def test_agent_record_has_exactly_the_seven_metrics_plus_identity(result):
     expected_keys = {
         "code", "name", "surname", "team",
         "submissions", "successful", "failed", "contacted", "quoted", "closed", "final_sale",
-        "trend",
+        "commission", "trend",
     }
     assert set(a.keys()) == expected_keys
+
+
+def test_commission_defaults_to_zero_when_not_requested(result):
+    # commission_rate wasn't passed to this fixture's assemble() call
+    assert agent(result, "MP120")["commission"] == 0.0
+    assert result["summary"]["commission_rate"] is None
+
+
+def test_commission_is_final_sale_times_rate_for_the_named_team_only(result_with_commission):
+    # MP120, PC005, ANM101, MP130 are Team A; commission_team="Team A", rate=0.60
+    assert agent(result_with_commission, "MP120")["commission"] == round(15000.00 * 0.60, 2)
+    assert agent(result_with_commission, "PC005")["commission"] == round(12000.50 * 0.60, 2)
+    assert agent(result_with_commission, "ANM101")["commission"] == round(8000.00 * 0.60, 2)
+    assert agent(result_with_commission, "MP130")["commission"] == round(20000.00 * 0.60, 2)
+    # PC014 is Team A but its only sale was excluded as zero-value -> no commission
+    assert agent(result_with_commission, "PC014")["commission"] == 0.0
+    # ML108 has a real Final Sale but is Team B, not the commission_team -> no commission
+    assert agent(result_with_commission, "ML108")["final_sale"] == 9500.25
+    assert agent(result_with_commission, "ML108")["commission"] == 0.0
+
+
+def team_total(result, team):
+    return next(t for t in result["summary"]["team_totals"] if t["team"] == team)
+
+
+def test_team_totals_sum_final_sale_and_commission_per_team(result_with_commission):
+    # Team A: MP120 15000 + PC005 12000.50 + PC014 0 (excluded) + ANM101 8000 + MP130 20000
+    team_a = team_total(result_with_commission, "Team A")
+    assert team_a["final_sale"] == round(15000.00 + 12000.50 + 8000.00 + 20000.00, 2)
+    assert team_a["commission"] == round(team_a["final_sale"] * 0.60, 2)
+
+    # Team B: ML108 9500.25 only, and Team B isn't the commission_team -> zero commission
+    team_b = team_total(result_with_commission, "Team B")
+    assert team_b["final_sale"] == 9500.25
+    assert team_b["commission"] == 0.0
+
+    # every agent's final_sale must land in exactly one team's total
+    total_of_totals = round(sum(t["final_sale"] for t in result_with_commission["summary"]["team_totals"]), 2)
+    total_of_agents = round(sum(a["final_sale"] for a in result_with_commission["agents"]), 2)
+    assert total_of_totals == total_of_agents
 
 
 def test_reconciliation_error_is_loud_when_totals_are_broken(tmp_path, monkeypatch):

@@ -1,4 +1,5 @@
 // Manager view: all agents, reconciliation banner, unassigned bucket, excluded policies.
+// Gated behind a shared passcode — see the NOTE below on what that does and doesn't protect.
 
 let DATA = null;
 let sortKey = "final_sale";
@@ -29,6 +30,7 @@ function renderBanner(recon) {
 
 function agentRow(a) {
   const nameStr = a.name ? `${a.name} ${a.surname}` : "—";
+  const commissionCell = DATA.summary.commission_rate != null ? `<td>${formatRand(a.commission)}</td>` : "";
   return `
     <tr>
       <td class="code">${a.code}</td>
@@ -41,6 +43,7 @@ function agentRow(a) {
       <td>${formatInt(a.quoted)}</td>
       <td>${formatInt(a.closed)}</td>
       <td>${formatRand(a.final_sale)}</td>
+      ${commissionCell}
     </tr>`;
 }
 
@@ -72,6 +75,22 @@ function renderTable() {
   document.querySelectorAll("#agents-table th").forEach((th) => {
     th.classList.toggle("sorted", th.dataset.key === sortKey);
   });
+}
+
+function renderTeamTotals(teams) {
+  const showCommission = DATA.summary.commission_rate != null;
+  document.getElementById("team-totals-tbody").innerHTML = teams.map((t) => `
+    <tr>
+      <td>${t.team}</td>
+      <td>${formatInt(t.submissions)}</td>
+      <td>${formatInt(t.successful)}</td>
+      <td>${formatInt(t.failed)}</td>
+      <td>${formatInt(t.contacted)}</td>
+      <td>${formatInt(t.quoted)}</td>
+      <td>${formatInt(t.closed)}</td>
+      <td>${formatRand(t.final_sale)}</td>
+      ${showCommission ? `<td>${formatRand(t.commission)}</td>` : ""}
+    </tr>`).join("");
 }
 
 function renderUnassigned(u) {
@@ -113,6 +132,49 @@ function populateTeamFilter(teams) {
   });
 }
 
+// ---------- manager passcode gate ----------
+// NOTE: this is a UX deterrent, not real security. The data is fetched
+// straight from data/*.json once unlocked, and static-file hosting has no
+// server to enforce the passcode against that fetch — anyone who requests
+// data/agents.json directly still gets it. Treat this the same as the
+// spec's original stance on agent identification: fine to start with, but
+// real per-manager authentication needs a real backend.
+const MANAGER_PASSCODE = "smartflow2026";
+const MANAGER_STORAGE_KEY = "sfa_manager_unlocked";
+let managerRendered = false;
+
+function unlockManager() {
+  document.getElementById("manager-gate").style.display = "none";
+  document.getElementById("manager-unlocked").style.display = "block";
+  if (!managerRendered) {
+    renderBanner(DATA.summary.reconciliation);
+    renderTeamTotals(DATA.summary.team_totals);
+    populateTeamFilter(DATA.summary.teams);
+    renderUnassigned(DATA.summary.unassigned);
+    renderExcluded(DATA.summary.excluded_zero_value_policies);
+    renderTable();
+    if (DATA.summary.commission_rate == null) {
+      document.getElementById("agents-commission-head").style.display = "none";
+      document.getElementById("team-commission-head").style.display = "none";
+    }
+    document.getElementById("team-filter").addEventListener("change", renderTable);
+    document.getElementById("search").addEventListener("input", renderTable);
+    document.querySelectorAll("#agents-table th").forEach((th) => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.key;
+        if (sortKey === key) {
+          sortDir = sortDir === "asc" ? "desc" : "asc";
+        } else {
+          sortKey = key;
+          sortDir = "desc";
+        }
+        renderTable();
+      });
+    });
+    managerRendered = true;
+  }
+}
+
 async function init() {
   const main = document.querySelector("main");
   try {
@@ -123,26 +185,19 @@ async function init() {
   }
 
   document.getElementById("footer-date").textContent = DATA.summary.as_of;
-  renderBanner(DATA.summary.reconciliation);
-  populateTeamFilter(DATA.summary.teams);
-  renderUnassigned(DATA.summary.unassigned);
-  renderExcluded(DATA.summary.excluded_zero_value_policies);
-  renderTable();
 
-  document.getElementById("team-filter").addEventListener("change", renderTable);
-  document.getElementById("search").addEventListener("input", renderTable);
-  document.querySelectorAll("#agents-table th").forEach((th) => {
-    th.addEventListener("click", () => {
-      const key = th.dataset.key;
-      if (sortKey === key) {
-        sortDir = sortDir === "asc" ? "desc" : "asc";
-      } else {
-        sortKey = key;
-        sortDir = "desc";
-      }
-      renderTable();
-    });
+  document.getElementById("manager-gate-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById("manager-gate-err");
+    if (document.getElementById("manager-code-input").value === MANAGER_PASSCODE) {
+      errEl.textContent = "";
+      sessionStorage.setItem(MANAGER_STORAGE_KEY, "1");
+      unlockManager();
+    } else {
+      errEl.textContent = "Incorrect passcode.";
+    }
   });
+  if (sessionStorage.getItem(MANAGER_STORAGE_KEY) === "1") unlockManager();
 }
 
 init();

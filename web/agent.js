@@ -61,6 +61,12 @@ function renderTrend(trend) {
 
 function renderDashboard(agent) {
   const funnelMax = agent.submissions || 1;
+  const summary = DATA.summary;
+  const earnsCommission = summary.commission_rate != null &&
+    (summary.commission_team == null || agent.team === summary.commission_team);
+  const commissionTile = earnsCommission
+    ? `<div class="tile accent commission"><div class="label">Commission (${Math.round(summary.commission_rate * 100)}%)</div><div class="value">${formatRand(agent.commission)}</div></div>`
+    : "";
   dashboardEl.innerHTML = `
     <div class="agent-head">
       <div>
@@ -78,6 +84,7 @@ function renderDashboard(agent) {
       <div class="tile"><div class="label">Quoted</div><div class="value">${formatInt(agent.quoted)}</div></div>
       <div class="tile"><div class="label">Closed</div><div class="value">${formatInt(agent.closed)}</div></div>
       <div class="tile accent"><div class="label">Final Sale</div><div class="value">${formatRand(agent.final_sale)}</div></div>
+      ${commissionTile}
     </div>
 
     <section class="panel">
